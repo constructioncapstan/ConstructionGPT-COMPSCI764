@@ -1,0 +1,50 @@
+# Sensitive/raw research data
+data/raw/
+data/private/
+data/processed_private/
+*.pdf
+*.zip
+*.xlsx
+*.xls
+*.csv
+
+# Allow documented public/sample metadata when explicitly added
+!data/README.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Model artifacts
+models/
+checkpoints/
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+
+# Generated outputs
+outputs/
+artifacts/
+wandb/
+mlruns/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/
