@@ -1,0 +1,13 @@
+numpy
+pandas
+scikit-learn
+xgboost
+matplotlib
+Pillow
+PyMuPDF
+torch
+torchvision
+transformers
+sentence-transformers
+tqdm
+pyyaml
