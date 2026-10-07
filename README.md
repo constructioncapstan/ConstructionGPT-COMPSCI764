@@ -6,25 +6,31 @@ Research project by **Lakshay Arora** and **Mike Ashton** for COMPSCI 764 at the
 
 Can vision-language representations extracted directly from residential Building Consent plans predict visually grounded construction trade costs, and does retrieval of similar historical projects improve prediction accuracy?
 
-## Initial scope
+## Dataset
 
-The study focuses on three trade groups with relatively direct visual/structural evidence in consent drawings:
+The current research dataset contains **11 real residential projects**. No synthetic properties are used in the official experiment.
 
-- Foundation / concrete
-- Timber framing
-- Roofing
+After document and PO auditing, the current observed-target coverage is:
+
+- Foundation / concrete: **8 / 11**
+- Framing manufacturing / frame-truss package: **9 / 11**
+- Roofing supply and installation: **9 / 11**
+
+Missing labels remain missing. They are not replaced with zero or synthetic values for the final evaluation.
+
+Raw drawings, addresses, POs, invoices and supplier records remain private and are not committed to this public repository.
 
 ## Experimental comparison
 
 The planned evaluation compares:
 
 1. Cost-per-area baseline
-2. XGBoost on structured project features
-3. Small multilayer perceptron (MLP) on structured project features
-4. Vision-language model prediction
-5. Vision-language model + similar-project retrieval
+2. XGBoost on structured plan/project features
+3. Small MLP on the same structured features
+4. Vision-language representation model
+5. Same VLM + similar-project retrieval
 
-Retrieval will use CLIP-style embeddings and cosine similarity over training projects only.
+The primary ablation is **VLM-only vs VLM + retrieval**.
 
 ## Evaluation
 
@@ -34,28 +40,48 @@ Primary metrics:
 - RMSE
 - MAPE
 
-All train/validation/test splits must occur at the **project level** before page extraction or retrieval indexing to prevent leakage.
+Because the dataset is small, evaluation is performed at the **project level** using leave-one-project-out or equivalent project-level cross-validation. Metrics for each trade are computed only on projects with an observed target for that trade.
+
+No validation or test project may appear in the training data or retrieval index.
 
 ## Repository structure
 
 ```
-data/                 dataset schemas and non-sensitive metadata
+data/                 schemas and non-sensitive metadata only
 src/
-  preprocessing/      plan preparation and feature processing
-  baselines/          cost/m², XGBoost and MLP models
-  vlm/                vision-language model experiments
-  retrieval/          embedding and nearest-neighbour retrieval
+  preprocessing/      PDF/page and structured-feature processing
+  baselines/          cost/m², XGBoost and MLP baselines
+  vlm/                vision-language representation experiments
+  retrieval/          CLIP-style embedding retrieval
   evaluation/         metrics and evaluation utilities
-experiments/          experiment configurations and run notes
-results/              result tables, figures and summaries
-docs/                 research protocol and methodology notes
-presentation/         presentation assets and planning
+scripts/               reproducible experiment entry points
+experiments/           experiment configuration
+results/               generated aggregate results only
+docs/                  methodology and dataset protocol
+presentation/          presentation planning
 ```
 
-## Data policy
+## Private data layout
 
-Raw client drawings, purchase orders, invoices, addresses, supplier information, and other commercially sensitive records must **not** be committed to this public repository. Only anonymised or derived research data should be stored here.
+The scripts expect private research data outside version control, for example:
 
-## Status
+```
+data/private/
+  research_dataset.csv
+  plans/
+    P01/
+    P02/
+    ...
+```
 
-Repository initialized. Dataset construction and audit are the next stage.
+The repository `.gitignore` prevents these files from being committed.
+
+## Current status
+
+- Repository scaffold: complete
+- 11-project document/PO audit: complete
+- Research dataset V1: complete
+- Baseline/evaluation code: implemented
+- PDF preprocessing: implemented
+- Retrieval scaffold: implemented
+- VLM experiments: next
