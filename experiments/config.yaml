@@ -1,0 +1,36 @@
+seed: 42
+dataset_version: "v1_11_real_projects"
+
+targets:
+  foundation: Foundation_Target_exGST
+  framing: Framing_Package_Target_exGST
+  roofing: Roofing_Target_exGST
+
+evaluation:
+  split: leave_one_project_out
+  metrics:
+    - mae
+    - rmse
+    - mape
+
+retrieval:
+  top_k:
+    - 1
+    - 3
+  metric: cosine
+  training_projects_only: true
+
+pdf_render:
+  dpi: 200
+
+structured_features:
+  numeric:
+    - Floor_Area_m2
+    - Units
+    - Storeys
+    - Bedrooms_Total
+  categorical:
+    - Foundation_Type
+    - Roof_Form
+    - Primary_Cladding
+    - Site_Complexity
