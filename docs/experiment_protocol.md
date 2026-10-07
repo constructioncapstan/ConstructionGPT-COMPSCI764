@@ -62,24 +62,42 @@ Use the same structured inputs with one-hot encoding, scaling and a small regula
 
 Given the small sample, model complexity must remain deliberately limited.
 
-## 7. Vision-language branch
+## 7. Plan-image preprocessing
 
-Relevant Building Consent pages are rendered at high resolution. Architectural and structural pages are selected before encoding.
+The Step-1 page manifest is frozen before model evaluation.
 
-The first VLM experiment should use a frozen or parameter-efficient representation rather than full-model training from scratch.
+It contains **95 selected pages** across the 11 projects. Selected page types include site, floor, roof, elevation, section, foundation, framing and bracing views where available.
 
-## 8. Retrieval branch
+Each selected page produces:
 
-Project/page embeddings are generated using a fixed vision-language retrieval model.
+- a 150-DPI full-page JPEG for VLM experiments;
+- a cropped retrieval JPEG for CLIP similarity.
+
+The retrieval crop removes a small fixed amount from page edges to reduce the chance that similarity is dominated by title blocks, addresses, logos or approval stamps.
+
+Raw PDFs and rendered images remain private.
+
+## 8. Vision-language branch
+
+The first VLM experiment uses the frozen full-page image set.
+
+The preferred implementation is a frozen or parameter-efficient representation rather than full-model training from scratch.
+
+No historical price is included in the visual prompt/input.
+
+## 9. Retrieval branch
+
+Project/page embeddings are generated from the frozen retrieval-crop images using a fixed vision-language retrieval model.
 
 For every held-out project:
 
 1. build the retrieval index from training projects only;
 2. compute cosine similarity;
-3. retrieve top-k similar training projects;
-4. provide compact retrieved project/cost context to the prediction stage.
+3. aggregate page similarities into project-level similarity;
+4. retrieve top-k similar training projects;
+5. provide compact retrieved project/cost context to the prediction stage.
 
-## 9. Primary ablation
+## 10. Primary ablation
 
 Use the same VLM representation and evaluation projects for:
 
@@ -88,7 +106,7 @@ Use the same VLM representation and evaluation projects for:
 
 Any change in error can then be attributed more cleanly to retrieval.
 
-## 10. Evaluation
+## 11. Evaluation
 
 For each trade, report:
 
@@ -106,11 +124,12 @@ Also report:
 - computational cost
 - limitations caused by small n and noisy historical targets
 
-## 11. Reproducibility
+## 12. Reproducibility
 
 Every experiment should record:
 
 - dataset version
+- page-manifest version
 - project IDs used
 - target definition
 - random seed
