@@ -10,6 +10,7 @@ data/processed_private/
 
 # Allow documented public/sample metadata when explicitly added
 !data/README.md
+!data/plan_manifest_public.csv
 
 # Python
 __pycache__/
