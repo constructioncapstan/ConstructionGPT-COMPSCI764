@@ -8,96 +8,114 @@ Can vision-language representations extracted directly from residential Building
 
 **H1:** Adding similar-project retrieval to a fixed VLM-based prediction pipeline reduces trade-level prediction error compared with the same VLM pipeline without retrieval.
 
-## 3. Secondary comparison
+## 3. Dataset
 
-Structured-feature models provide a strong conventional baseline for determining whether information learned directly from plan imagery contributes useful predictive signal.
+The official experiment uses **11 real residential projects only**.
 
-## 4. Target trades
+Observed label availability after document and PO audit:
 
-The initial experiment is restricted to:
+- foundation / concrete: 8 projects
+- framing manufacturing / frame-truss package: 9 projects
+- roofing supply/install: 9 projects
 
-1. foundation / concrete
-2. timber framing
-3. roofing
+Missing labels remain missing. They are never silently converted to zero or replaced with generated labels for the final experiment.
 
-## 5. Dataset construction
+## 4. Target definitions
 
-Each property is treated as one independent research project. Historical trade targets must be reconstructed from available project cost evidence.
+### Foundation
+Foundation-system cost excluding separately identified earthworks, driveway and unrelated site works where these can be separated.
 
-Target cleaning should document:
+### Framing
+A supplier manufacturing/package target centred on pre-nailed frames, trusses and balance-of-roof/manufacturing scope. This is intentionally narrower than a complete commercial framing cost head so that projects can be compared more consistently.
 
-- included POs/invoices
-- excluded variations
-- cancelled or duplicated orders
-- credits
-- GST treatment
-- target date
-- confidence/quality status
-- unresolved ambiguity
+### Roofing
+Main roof supply-and-install package. Fascia, gutter and downpipe values are excluded when separately quoted. Cancelled and superseded roof quotes are not used as final labels.
 
-Missing information must not be silently interpreted as zero.
+All targets are ex GST.
 
-## 6. Leakage prevention
+## 5. Leakage prevention
 
-The dataset must be split at project level before:
+The project identifier is the atomic split unit.
 
-- rendering pages into training examples
-- extracting embeddings
-- fitting feature normalisation
-- building a retrieval index
+Before a held-out project is evaluated, it must be excluded from:
 
-For test-project inference, retrieval candidates must come only from the permitted training/history pool.
+- structured-model fitting
+- scaling/encoding fitting
+- page/image training examples
+- VLM adaptation
+- embedding index construction
+- retrieval candidates
+- target-normalisation statistics
 
-## 7. Baselines
+This rule also applies when multiple lots belong to one project: they stay in the same project split.
 
-### B0 — Cost per area
-Simple trade cost-per-m² estimate.
+## 6. Baselines
+
+### B0 — Training-fold cost per area
+For each held-out project, calculate the average trade $/m² from labelled training projects only, then multiply by the held-out floor area.
 
 ### B1 — XGBoost
-Structured project attributes to trade-level target cost.
+Use a compact structured feature set: floor area, units, storeys, bedrooms, foundation type, roof form, cladding and site complexity.
 
 ### B2 — MLP
-Small feed-forward neural network on the same structured input features.
+Use the same structured inputs with one-hot encoding, scaling and a small regularised feed-forward network.
 
-## 8. Vision-language branch
+Given the small sample, model complexity must remain deliberately limited.
 
-Plan sheets will be rendered at sufficient resolution and relevant drawing views/pages selected. VLM representations will be used for trade-cost prediction.
+## 7. Vision-language branch
 
-The exact VLM implementation will be frozen before final evaluation.
+Relevant Building Consent pages are rendered at high resolution. Architectural and structural pages are selected before encoding.
 
-## 9. Retrieval branch
+The first VLM experiment should use a frozen or parameter-efficient representation rather than full-model training from scratch.
 
-Plan/project representations will be embedded using a fixed retrieval model. Cosine similarity will select top-k historical training projects.
+## 8. Retrieval branch
 
-The primary ablation compares:
+Project/page embeddings are generated using a fixed vision-language retrieval model.
+
+For every held-out project:
+
+1. build the retrieval index from training projects only;
+2. compute cosine similarity;
+3. retrieve top-k similar training projects;
+4. provide compact retrieved project/cost context to the prediction stage.
+
+## 9. Primary ablation
+
+Use the same VLM representation and evaluation projects for:
 
 - VLM without retrieval
-- same VLM + retrieval
+- VLM + retrieval
+
+Any change in error can then be attributed more cleanly to retrieval.
 
 ## 10. Evaluation
 
-Report trade-level and aggregate:
+For each trade, report:
 
+- labelled project count
 - MAE
 - RMSE
 - MAPE
+- per-project absolute error
 
-Also record:
+Also report:
 
-- retrieval quality examples
-- failure cases
-- computational considerations
-- limitations caused by noisy historical targets
+- mean/median retrieval similarity
+- qualitative neighbour audit
+- notable failure cases
+- computational cost
+- limitations caused by small n and noisy historical targets
 
 ## 11. Reproducibility
 
-Final experiments should record:
+Every experiment should record:
 
-- random seed
 - dataset version
-- split definition
-- model/configuration
+- project IDs used
+- target definition
+- random seed
+- cross-validation protocol
+- model parameters
 - retrieval k
-- target-normalisation method
-- software dependencies
-- metric implementation
+- software versions
+- generated result file
