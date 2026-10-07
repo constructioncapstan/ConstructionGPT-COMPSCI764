@@ -20,6 +20,27 @@ Missing labels remain missing. They are not replaced with zero or synthetic valu
 
 Raw drawings, addresses, POs, invoices and supplier records remain private and are not committed to this public repository.
 
+## Step 1 — plan preprocessing
+
+The audited source drawings have now been reduced to a frozen **95-page primary image manifest** across the 11 projects.
+
+The selected pages cover, where available:
+
+- site plans
+- ground/upper floor plans
+- roof and roof-framing plans
+- elevations and sections
+- structural foundation plans/details
+- structural framing plans
+- structural bracing plans
+
+Each selected page is rendered in two forms:
+
+1. **full page** for VLM experiments;
+2. **retrieval crop** for CLIP-style similarity retrieval, with page edges cropped to reduce title-block/address/logo bias.
+
+The rendered private image dataset is not committed. The public repository contains only the anonymised page manifest and the reproducible rendering script.
+
 ## Experimental comparison
 
 The planned evaluation compares:
@@ -63,18 +84,29 @@ presentation/          presentation planning
 
 ## Private data layout
 
-The scripts expect private research data outside version control, for example:
+The rendering script expects private audited PDFs outside version control:
 
 ```
-data/private/
-  research_dataset.csv
-  plans/
-    P01/
-    P02/
-    ...
+data/private/raw_plans/
+  P01/
+    arch.pdf
+    struct.pdf
+  P02/
+    arch.pdf
+    struct.pdf
+  ...
 ```
 
-The repository `.gitignore` prevents these files from being committed.
+Some projects have an additional source role such as `framing.pdf`.
+
+Run preprocessing with:
+
+```bash
+python -m src.preprocessing.render_selected_pages \
+  --manifest data/plan_manifest_public.csv \
+  --raw-root data/private/raw_plans \
+  --output-root data/private/rendered_plans
+```
 
 ## Current status
 
@@ -82,6 +114,6 @@ The repository `.gitignore` prevents these files from being committed.
 - 11-project document/PO audit: complete
 - Research dataset V1: complete
 - Baseline/evaluation code: implemented
-- PDF preprocessing: implemented
-- Retrieval scaffold: implemented
-- VLM experiments: next
+- **Step 1 plan preprocessing: complete — 95 primary pages frozen**
+- CLIP retrieval experiment: next
+- VLM experiment: follows retrieval baseline
