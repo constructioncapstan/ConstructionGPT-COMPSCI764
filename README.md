@@ -8,98 +8,92 @@ Can vision-language representations extracted directly from residential Building
 
 ## Dataset
 
-The current research dataset contains **11 real residential projects**. No synthetic properties are used in the official experiment.
+The official research dataset contains **11 real residential projects**. No synthetic properties are used in the final experiment.
 
-After document and PO auditing, the current observed-target coverage is:
+Observed-target coverage after the document and PO audit:
 
 - Foundation / concrete: **8 / 11**
 - Framing manufacturing / frame-truss package: **9 / 11**
 - Roofing supply and installation: **9 / 11**
 
-Missing labels remain missing. They are not replaced with zero or synthetic values for the final evaluation.
+Missing labels remain missing. They are not replaced with zero or synthetic values for final evaluation.
 
 Raw drawings, addresses, POs, invoices and supplier records remain private and are not committed to this public repository.
 
-## Step 1 — plan preprocessing
+## Plan preprocessing
 
-The audited source drawings have now been reduced to a frozen **95-page primary image manifest** across the 11 projects.
-
-The selected pages cover, where available:
-
-- site plans
-- ground/upper floor plans
-- roof and roof-framing plans
-- elevations and sections
-- structural foundation plans/details
-- structural framing plans
-- structural bracing plans
+The audited source drawings were reduced to a frozen **95-page primary image manifest** across the 11 projects. Selected pages include site plans, floor plans, roof and roof-framing plans, elevations/sections, and structural foundation/framing/bracing views where available.
 
 Each selected page is rendered in two forms:
 
-1. **full page** for VLM experiments;
-2. **retrieval crop** for CLIP-style similarity retrieval, with page edges cropped to reduce title-block/address/logo bias.
+1. a full page retained for higher-resolution multimodal work;
+2. a retrieval crop with page edges removed to reduce title-block/address/logo bias.
 
-The rendered private image dataset is not committed. The public repository contains only the anonymised page manifest and the reproducible rendering script.
+For the reported lightweight experiment, retrieval views are converted to grayscale and reduced to 32 x 32 pixels. The rendered private image dataset is not committed.
 
-## Experimental comparison
+## Final experimental comparison
 
-The planned evaluation compares:
+The leakage-controlled leave-one-project-out experiment compares:
 
-1. Cost-per-area baseline
-2. XGBoost on structured plan/project features
-3. Small MLP on the same structured features
-4. Vision-language representation model
-5. Same VLM + similar-project retrieval
+1. training-fold cost-per-area baseline;
+2. XGBoost on structured project features;
+3. a small structured MLP;
+4. a fold-specific CLIP-inspired contrastive image-text representation + ridge cost head;
+5. visual similarity retrieval;
+6. the same visual predictor augmented by retrieval.
 
-The primary ablation is **VLM-only vs VLM + retrieval**.
+The encoder is retrained within every outer fold. The held-out project never appears in representation fitting, structured-model fitting, normalisation, or the retrieval index.
 
-## Evaluation
+## Final result
 
-Primary metrics:
+The main retrieval hypothesis was **not supported**.
 
-- MAE
-- RMSE
-- MAPE
+| Trade | Best MAPE | CVL visual MAPE | CVL + retrieval MAPE |
+|---|---:|---:|---:|
+| Foundation | XGBoost — 36.88% | 39.81% | 49.46% |
+| Framing | MLP — 23.37% | 40.83% | 37.52% |
+| Roofing | Cost/m² — 42.65% | 46.51% | 66.91% |
 
-Because the dataset is small, evaluation is performed at the **project level** using leave-one-project-out or equivalent project-level cross-validation. Metrics for each trade are computed only on projects with an observed target for that trade.
+Across the 26 scored trade-project observations, XGBoost has the lowest overall MAE (~NZ$9.43k), with the contrastive visual predictor close behind (~NZ$9.57k). Retrieval augmentation increases overall MAE to ~NZ$12.67k.
 
-No validation or test project may appear in the training data or retrieval index.
+This negative result is part of the research contribution: visually similar drawings are not necessarily similar in cost when the case base is small and historical targets contain commercial, site and scope effects that are not visible in the consent plans.
+
+See `results/final_results.md` and `results/final_metrics.csv`.
 
 ## Repository structure
 
-```
+```text
 data/                 schemas and non-sensitive metadata only
 src/
   preprocessing/      PDF/page and structured-feature processing
   baselines/          cost/m², XGBoost and MLP baselines
-  vlm/                vision-language representation experiments
-  retrieval/          CLIP-style embedding retrieval
+  vlm/                contrastive image-text representation
+  retrieval/          embedding and nearest-neighbour retrieval
   evaluation/         metrics and evaluation utilities
 scripts/               reproducible experiment entry points
 experiments/           experiment configuration
-results/               generated aggregate results only
+results/               aggregate public results only
 docs/                  methodology and dataset protocol
 presentation/          presentation planning
 ```
 
 ## Private data layout
 
-The rendering script expects private audited PDFs outside version control:
+The public code expects private audited data outside version control, for example:
 
+```text
+data/private/
+  research_dataset.csv
+  plan32.npy
+  plan32_meta.json
+  raw_plans/
+    P01/
+      arch.pdf
+      struct.pdf
+    ...
 ```
-data/private/raw_plans/
-  P01/
-    arch.pdf
-    struct.pdf
-  P02/
-    arch.pdf
-    struct.pdf
-  ...
-```
 
-Some projects have an additional source role such as `framing.pdf`.
-
-Run preprocessing with:
+Preprocessing can be reproduced with:
 
 ```bash
 python -m src.preprocessing.render_selected_pages \
@@ -108,12 +102,23 @@ python -m src.preprocessing.render_selected_pages \
   --output-root data/private/rendered_plans
 ```
 
-## Current status
+The full LOPO experiment can be reproduced after preparing the private image array and metadata:
 
-- Repository scaffold: complete
-- 11-project document/PO audit: complete
-- Research dataset V1: complete
-- Baseline/evaluation code: implemented
-- **Step 1 plan preprocessing: complete — 95 primary pages frozen**
-- CLIP retrieval experiment: next
-- VLM experiment: follows retrieval baseline
+```bash
+python scripts/run_full_experiment.py \
+  --dataset data/private/research_dataset.csv \
+  --images data/private/plan32.npy \
+  --image-meta data/private/plan32_meta.json
+```
+
+## Status
+
+- 11-project document and PO audit: complete
+- Research dataset: complete
+- 95-page preprocessing manifest: complete
+- Structured baselines: complete
+- Contrastive visual experiment: complete
+- Similar-project retrieval experiment: complete
+- Retrieval ablation and LOPO evaluation: complete
+- Aggregate results: committed
+- Final report and oral presentation: prepared separately for course submission
