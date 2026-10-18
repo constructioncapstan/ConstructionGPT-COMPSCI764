@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ConstructionGPT — Research Demo</title>
+<style>
+  :root{
+    --bg:#07111f; --panel:#0d1b2d; --panel2:#10233b; --ink:#f7fbff;
+    --muted:#95a9bf; --blue:#58a6ff; --cyan:#63e6e2; --line:#223852;
+    --good:#87e3a0; --warn:#ffcf70;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:
+    radial-gradient(circle at 12% 12%,rgba(88,166,255,.16),transparent 28%),
+    radial-gradient(circle at 90% 10%,rgba(99,230,226,.10),transparent 25%),var(--bg);color:var(--ink)}
+  .shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px}
+  .app{width:min(1180px,100%);border:1px solid var(--line);border-radius:24px;background:rgba(8,20,35,.92);
+    box-shadow:0 24px 80px rgba(0,0,0,.35);overflow:hidden}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:-.02em}
+  .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--cyan));display:grid;place-items:center;color:#04111e;font-weight:900}
+  .badge{font-size:12px;color:var(--cyan);border:1px solid rgba(99,230,226,.4);background:rgba(99,230,226,.08);padding:6px 10px;border-radius:999px}
+  .content{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;padding:22px}
+  .panel{background:linear-gradient(180deg,rgba(16,35,59,.92),rgba(11,25,43,.92));border:1px solid var(--line);border-radius:18px;padding:18px}
+  .kicker{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--blue);font-weight:800;margin-bottom:8px}
+  h1{font-size:30px;line-height:1.04;margin:0 0 8px;letter-spacing:-.04em}
+  .sub{color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:16px}
+  .plan{height:360px;border:1px solid #26415e;border-radius:14px;background:#081421;overflow:hidden;position:relative}
+  .plan svg{width:100%;height:100%;display:block}
+  .planTag{position:absolute;top:12px;left:12px;background:rgba(7,17,31,.82);border:1px solid #284866;color:#bcd1e6;padding:6px 9px;border-radius:8px;font-size:11px}
+  .featureGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+  .feature{padding:11px 12px;border-radius:12px;background:#0a1728;border:1px solid #203753}
+  .feature b{display:block;font-size:15px;margin-top:3px}.feature span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .run{width:100%;margin-top:14px;border:0;border-radius:12px;padding:13px 16px;font-weight:800;background:linear-gradient(90deg,var(--blue),var(--cyan));color:#03101c;cursor:pointer;font-size:14px}
+  .run:disabled{opacity:.75;cursor:default}
+  .pipeline{display:flex;align-items:center;gap:8px;margin:8px 0 16px}
+  .step{flex:1;text-align:center;padding:9px 6px;border-radius:10px;border:1px solid var(--line);color:#7890a8;font-size:11px;font-weight:700;background:#091726;transition:.3s}
+  .step.active{border-color:var(--blue);color:var(--ink);background:rgba(88,166,255,.12);box-shadow:inset 0 0 0 1px rgba(88,166,255,.08)}
+  .arrow{color:#4f6983}
+  .section{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);opacity:.28;transform:translateY(4px);transition:.45s}
+  .section.show{opacity:1;transform:none}
+  .sectionTitle{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#a8bed3;font-weight:800;margin-bottom:9px}
+  .neighbor{display:grid;grid-template-columns:34px 1fr 60px;align-items:center;gap:10px;padding:9px 10px;background:#0a1728;border:1px solid #203753;border-radius:10px;margin-bottom:7px}
+  .rank{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:#102946;color:var(--cyan);font-weight:900;font-size:12px}
+  .bar{height:6px;background:#1b3147;border-radius:999px;overflow:hidden;margin-top:5px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan))}
+  .sim{text-align:right;color:#c8d9e8;font-size:12px;font-variant-numeric:tabular-nums}
+  .result{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .metric{background:#0a1728;border:1px solid #203753;border-radius:12px;padding:11px}
+  .metric span{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}.metric strong{display:block;font-size:18px;margin-top:4px}
+  .metric.accent{border-color:rgba(99,230,226,.55);background:rgba(99,230,226,.06)}
+  .note{margin-top:12px;color:#89a2ba;font-size:11px;line-height:1.45}
+  .footer{padding:0 22px 20px;color:#668098;font-size:10px;display:flex;justify-content:space-between;gap:20px}
+  @media(max-width:900px){.content{grid-template-columns:1fr}.plan{height:300px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><div class="mark">C</div>ConstructionGPT <span style="color:#607b95;font-weight:600">/ COMPSCI 764</span></div>
+      <div class="badge">Preloaded held-out example</div>
+    </header>
+
+    <div class="content">
+      <section class="panel">
+        <div class="kicker">Anonymised consent-plan input</div>
+        <h1>Project P10</h1>
+        <div class="sub">A cached academic example used to illustrate the research pipeline. No private address, supplier, or client information is exposed.</div>
+        <div class="plan">
+          <div class="planTag">ANONYMISED PLAN VIEW</div>
+          <svg viewBox="0 0 720 440" aria-label="generic anonymised floor plan">
+            <rect x="0" y="0" width="720" height="440" fill="#071522"/>
+            <g stroke="#5ea4d6" stroke-width="3" fill="none" opacity=".95">
+              <rect x="82" y="62" width="535" height="310" rx="3"/>
+              <path d="M82 205H617M278 62V372M455 62V205M455 205V372M278 280H455"/>
+              <path d="M335 205v-30q0-30 30-30M455 270h-30q-30 0-30 30M278 135h-30q-30 0-30-30"/>
+              <rect x="112" y="94" width="136" height="84"/><rect x="486" y="92" width="101" height="82"/>
+              <rect x="105" y="236" width="142" height="105"/><rect x="491" y="236" width="98" height="105"/>
+            </g>
+            <g fill="#79c9f5" font-size="14" font-family="monospace" opacity=".92">
+              <text x="130" y="88">BED 1</text><text x="510" y="86">BED 2</text>
+              <text x="128" y="230">BED 3</text><text x="508" y="230">GARAGE</text>
+              <text x="320" y="128">LIVING / KITCHEN</text><text x="325" y="260">SERVICE</text>
+            </g>
+            <g stroke="#31506b" stroke-width="1.2" opacity=".7"><path d="M42 50H670M42 390H670"/><path d="M60 30V405M646 30V405"/></g>
+          </svg>
+        </div>
+
+        <div class="featureGrid">
+          <div class="feature"><span>Floor area</span><b>150 m²</b></div>
+          <div class="feature"><span>Storeys</span><b>1</b></div>
+          <div class="feature"><span>Foundation</span><b>Engineered slab</b></div>
+          <div class="feature"><span>Roof</span><b>Metal roof</b></div>
+        </div>
+        <button class="run" id="runBtn">Run cached research example</button>
+      </section>
+
+      <section class="panel">
+        <div class="kicker">Research output</div>
+        <div class="pipeline">
+          <div class="step active" id="s1">Plan</div><div class="arrow">→</div>
+          <div class="step" id="s2">Visual representation</div><div class="arrow">→</div>
+          <div class="step" id="s3">Retrieve</div><div class="arrow">→</div>
+          <div class="step" id="s4">Predict</div>
+        </div>
+
+        <div class="section" id="retrieval">
+          <div class="sectionTitle">Top visually similar training projects</div>
+          <div class="neighbor"><div class="rank">1</div><div><b>P11</b><div class="bar"><i style="width:55%"></i></div></div><div class="sim">0.55</div></div>
+          <div class="neighbor"><div class="rank">2</div><div><b>P03</b><div class="bar"><i style="width:20%"></i></div></div><div class="sim">0.20</div></div>
+          <div class="neighbor"><div class="rank">3</div><div><b>P09</b><div class="bar"><i style="width:19%"></i></div></div><div class="sim">0.19</div></div>
+        </div>
+
+        <div class="section" id="prediction">
+          <div class="sectionTitle">Example trade — roofing (2026 Q2 normalised)</div>
+          <div class="result">
+            <div class="metric"><span>Visual only</span><strong>$14,761</strong></div>
+            <div class="metric accent"><span>Visual + retrieval</span><strong>$14,884</strong></div>
+            <div class="metric"><span>Observed target</span><strong>$16,984</strong></div>
+          </div>
+          <div class="note">This is one held-out example. Across the full 11-project study, retrieval did <b>not</b> consistently improve prediction accuracy. The demo illustrates the pipeline, not production estimator accuracy.</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer">
+      <span>Research prototype · anonymised cached example · no live upload required</span>
+      <span>ConstructionGPT — University research project</span>
+    </div>
+  </main>
+</div>
+
+<script>
+const btn=document.getElementById('runBtn');
+const steps=[document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3'),document.getElementById('s4')];
+const retrieval=document.getElementById('retrieval');
+const prediction=document.getElementById('prediction');
+
+function reset(){
+  steps.forEach((s,i)=>s.classList.toggle('active',i===0));
+  retrieval.classList.remove('show');
+  prediction.classList.remove('show');
+}
+btn.addEventListener('click',()=>{
+  reset();
+  btn.disabled=true; btn.textContent='Running cached example…';
+  setTimeout(()=>steps[1].classList.add('active'),450);
+  setTimeout(()=>{steps[2].classList.add('active');retrieval.classList.add('show')},1050);
+  setTimeout(()=>{steps[3].classList.add('active');prediction.classList.add('show')},1750);
+  setTimeout(()=>{btn.textContent='Example complete ✓'},2100);
+});
+</script>
+</body>
+</html>
